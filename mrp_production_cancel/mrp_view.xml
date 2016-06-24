@@ -7,10 +7,10 @@
             <field name="model">mrp.production</field>
             <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
             <field name="arch" type="xml">
-                <xpath expr="//button[@name='button_cancel']" position="replace">
-                    <button name="button_cancel" states="draft,ready,in_production,picking_except,done" string="Cancel" icon="gtk-stop" groups="base.group_production_cancel"/>
-                </xpath>
-            </field>
+                    <xpath expr="//button[@name='button_cancel']" position="replace">
+            <button name="button_cancel" states="draft,ready,in_production,picking_except,done" string="Cancel" icon="gtk-stop" groups="base.group_production_cancel"/>
+                    </xpath>
+        </field>
         </record>
 
     </data>

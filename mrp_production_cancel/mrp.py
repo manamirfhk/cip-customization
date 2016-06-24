@@ -26,44 +26,61 @@
 from openerp.osv import osv
 
 import openerp.netsvc as netsvc
-from openerp.tools.translate import _
 
 
 class mrp_production(osv.Model):
     _inherit = "mrp.production"
 
     def action_cancel(self, cr, uid, ids, context=None):
-        wf_service = netsvc.LocalService("workflow")
-
         if context is None:
             context = {}
 
+        pick_obj = self.pool.get('stock.picking')
         move_obj = self.pool.get('stock.move')
         for production in self.browse(cr, uid, ids, context=context):
             if production.picking_id.id:
-                wf_service.trg_validate(
-                    uid, 'stock.picking', production.picking_id.id,
-                    'button_cancel', cr)
+                pick_obj.action_cancel(cr, uid, [production.picking_id.id])
             for move in production.move_lines2:
                 account_move_line_id = self.pool.get('account.move.line').search(
                     cr, uid, [('stock_move_id', '=', move.id)])
-                if account_move_line_id:
-                    move_obj.action_cancel(cr, uid, [move.id])
-                else:
+                if move.product_id.valuation == 'real_time' and not account_move_line_id:
                     raise osv.except_osv(
                         'Warning!',
                         'Cannot cancel manufacturing order without related journal items!'
                     )
+                else:
+                    move_obj.action_cancel(cr, uid, [move.id])
             if production.move_created_ids2:
                 for move in production.move_created_ids2:
                     account_move_line_id2 = self.pool.get('account.move.line').search(
                         cr, uid, [('stock_move_id', '=', move.id)])
-                    if account_move_line_id2:
-                        move_obj.action_cancel(cr, uid, [move.id])
-                    else:
+                    if move.product_id.valuation == 'real_time' and not account_move_line_id2:
                         raise osv.except_osv(
                             'Warning!',
                             'Cannot cancel manufacturing order without related journal items!'
                         )
+                    else:
+                        move_obj.action_cancel(cr, uid, [move.id])
         return super(mrp_production, self).action_cancel(cr, uid, ids,
-                                                         context=context)
+                                                        context=context)
+
+
+#    def action_cancel(self, cr, uid, ids, context=None):
+#        wf_service = netsvc.LocalService("workflow")
+#
+#        if context is None:
+#            context = {}
+#
+#        move_obj = self.pool.get('stock.move')
+#        for production in self.browse(cr, uid, ids, context=context):
+#            if production.picking_id.id:
+#                wf_service.trg_validate(
+#                    uid, 'stock.picking', production.picking_id.id,
+#                    'button_cancel', cr)
+#            move_obj.action_cancel(cr, uid, [
+#                                   x.id for x in production.move_lines2])
+#            if production.move_created_ids2:
+#                move_obj.action_cancel(cr, uid, [
+#                    x.id for x in production.move_created_ids2])
+#        return super(mrp_production, self).action_cancel(cr, uid, ids,
+#                                                         context=context)
